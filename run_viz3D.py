@@ -44,7 +44,7 @@ PROJECTION = "perspective"  # "perspective" or "orthographic"
 POINTS_RGB = True  # True: color points from model RGB
 POINT_COLOR = "rgba(255,0,0,0.8)"  # used when POINTS_RGB=False
 TEMPLATE = "plotly_dark"  # "plotly_white" or "plotly_dark"
-FIG_HEIGHT = 800  # pixels (optional tweak)
+FIG_HEIGHT = 900  # pixels (optional tweak)
 # -----------------------------------------------------------------------------
 
 
