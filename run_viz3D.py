@@ -65,6 +65,7 @@ def main():
     )
 
     # 4) Show the interactive viewer
+    viz3D.add_view_buttons(fig)
     fig.show()
 
 
