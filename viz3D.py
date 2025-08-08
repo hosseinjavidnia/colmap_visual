@@ -519,3 +519,123 @@ def plot_reconstruction(
 
     if cameras:
         plot_cameras(fig, rec, color=color, legendgroup=name, size=cs)
+
+
+def add_view_buttons(
+    fig: go.Figure,
+    distance: float | None = None,
+    include_projection_toggle: bool = False,
+    keep_current_radius: bool = True,
+):
+    """
+    Add Top/Bottom/Left/Right/Front/Back/Reset buttons.
+    Keeps the same apparent scale by default (reuses current camera eye norm).
+    """
+    # current camera (for radius, up vector, and Reset)
+    init_cam = (
+        fig.layout.scene.camera.to_plotly_json()
+        if fig.layout.scene and fig.layout.scene.camera
+        else {}
+    )
+
+    def _eye_radius(cam_dict):
+        e = cam_dict.get("eye", {}) if isinstance(cam_dict, dict) else {}
+        try:
+            return float(
+                (e.get("x", 0.0) ** 2 + e.get("y", 0.0) ** 2 + e.get("z", 0.0) ** 2)
+                ** 0.5
+            )
+        except Exception:
+            return None
+
+    # choose the distance to use when snapping views
+    r0 = _eye_radius(init_cam)
+    if distance is None:
+        if keep_current_radius and r0 and r0 > 0:
+            distance = r0
+        else:
+            # fallback: estimate from data extents
+            xs, ys, zs = [], [], []
+            for tr in fig.data:
+                if getattr(tr, "x", None) is not None:
+                    xs += [v for v in tr.x if v is not None]
+                if getattr(tr, "y", None) is not None:
+                    ys += [v for v in tr.y if v is not None]
+                if getattr(tr, "z", None) is not None:
+                    zs += [v for v in tr.z if v is not None]
+            if xs and ys and zs:
+                import numpy as _np
+
+                rangemax = max(
+                    (_np.nanmax(xs) - _np.nanmin(xs)),
+                    (_np.nanmax(ys) - _np.nanmin(ys)),
+                    (_np.nanmax(zs) - _np.nanmin(zs)),
+                )
+                distance = float(rangemax if rangemax > 0 else 2.5) * 1.4
+            else:
+                distance = 2.5
+
+    # preserve your current "up" vector (you default to y = -1)
+    up_current = init_cam.get("up", dict(x=0, y=-1, z=0))
+
+    def _view(x=0, y=0, z=0, up=None):
+        cam = dict(eye=dict(x=x, y=y, z=z))
+        cam["up"] = up if up is not None else up_current
+        return cam
+
+    # canonical directions with the SAME radius
+    D = float(distance)
+    views = [
+        ("Top", _view(0, -distance, 0)),
+        ("Bottom", _view(0, +distance, 0)),
+        ("Left", _view(-distance, 0, 0)),
+        ("Right", _view(+distance, 0, 0)),
+        ("Front", _view(0, 0, -distance)),
+        ("Back", _view(0, 0, +distance)),
+        ("Reset", init_cam),
+    ]
+
+    btn_row_1 = dict(
+        type="buttons",
+        direction="right",
+        x=0.01,
+        y=0.99,
+        xanchor="left",
+        yanchor="top",
+        buttons=[
+            dict(label=label, method="relayout", args=[{"scene.camera": cam}])
+            for label, cam in views
+        ],
+        pad=dict(r=4, t=4),
+        showactive=False,
+    )
+
+    updatemenus = [btn_row_1]
+
+    if include_projection_toggle:
+        proj_buttons = dict(
+            type="buttons",
+            direction="right",
+            x=0.01,
+            y=0.94,
+            xanchor="left",
+            yanchor="top",
+            buttons=[
+                dict(
+                    label="Perspective",
+                    method="relayout",
+                    args=[{"scene.camera.projection.type": "perspective"}],
+                ),
+                dict(
+                    label="Orthographic",
+                    method="relayout",
+                    args=[{"scene.camera.projection.type": "orthographic"}],
+                ),
+            ],
+            pad=dict(r=4, t=4),
+            showactive=True,
+        )
+        updatemenus.append(proj_buttons)
+
+    existing = list(fig.layout.updatemenus) if fig.layout.updatemenus else []
+    fig.update_layout(updatemenus=existing + updatemenus)
