@@ -11,7 +11,7 @@ Works directly with COLMAP’s `read_write_model.py` — **no other SfM deps**.
 ```bash
 pip install -r requirements.txt
 # or:
-pip install "numpy>=1.26.4" "plotly>=5.20.0"
+pip install "numpy>=1.26.4" "plotly>=5.20.0" "pillow>=10.3.0"
 ```
 
 ### 2) Run the example
@@ -32,5 +32,10 @@ By default it loads the sample model in `DISK_LightGlue/` and opens an interacti
 ├─ requirements.txt
 ├─ DISK_LightGlue/        # example 1: small COLMAP model (cameras.*, images.*, points3D.*)
 ├─ SP_SuperGlue/          # example 2: small COLMAP model (cameras.*, images.*, points3D.*)
+├─ paris_tram_1/          # example image sequence
 └─ read_write_model.py    # from COLMAP (not bundled upstream)
 ```
+
+---
+### Visualization
+![](demo/demo.png)
